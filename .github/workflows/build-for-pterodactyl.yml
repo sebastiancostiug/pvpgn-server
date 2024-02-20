@@ -6,7 +6,7 @@ on:
             - develop
 
 jobs:
-    build_without_sqlite_or_lua:
+    build:
         runs-on: ubuntu-20.04
         steps:
             - name: Checkout code
@@ -24,6 +24,11 @@ jobs:
             - name: Archive production artifacts
               run: |
                   cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev.tar.gz .
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: pvpgn-server-dev
+                  path: ${{ github.workspace }}/pvpgn-server-dev.tar.gz
 
     build_with_sqlite:
         runs-on: ubuntu-20.04
@@ -43,6 +48,11 @@ jobs:
             - name: Archive production artifacts
               run: |
                   cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev-sqlite.tar.gz .
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite
+                  path: ${{ github.workspace }}/pvpgn-server-dev-sqlite.tar.gz
 
     build_with_sqlite_and_lua:
         runs-on: ubuntu-20.04
@@ -62,18 +72,33 @@ jobs:
             - name: Archive production artifacts
               run: |
                   cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev-sqlite-lua.tar.gz .
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite-lua
+                  path: ${{ github.workspace }}/pvpgn-server-dev-sqlite-lua.tar.gz
 
     release:
-        needs:
-            [
-                build_without_sqlite_or_lua,
-                build_with_sqlite,
-                build_with_sqlite_and_lua,
-            ]
+        needs: [build, build_with_sqlite, build_with_sqlite_and_lua]
         runs-on: ubuntu-20.04
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: pvpgn-server-dev
+                  path: .
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite
+                  path: .
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite-lua
+                  path: .
             - name: Create tag
               run: |
                   if ! git show-ref --tags v1.0; then
