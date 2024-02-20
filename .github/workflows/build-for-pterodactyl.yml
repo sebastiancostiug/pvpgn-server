@@ -14,7 +14,7 @@ jobs:
             - name: Install dependencies
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev
+                  sudo apt-get install -y curl cmake make build-essential zlib1g-dev libc++-dev
             - name: Create directory
               run: sudo mkdir -p /home/container
             - name: Build
@@ -33,7 +33,7 @@ jobs:
             - name: Install dependencies
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev sqlite3 libsqlite3-dev
+                  sudo apt-get install -y curl cmake make build-essential zlib1g-dev libc++-dev libsqlite3-dev
             - name: Create directory
               run: sudo mkdir -p /home/container
             - name: Build
@@ -52,7 +52,7 @@ jobs:
             - name: Install dependencies
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev sqlite3 libsqlite3-dev lua5.3 liblua5.3-dev
+                  sudo apt-get install -y curl cmake make build-essential zlib1g-dev libc++-dev libsqlite3-dev liblua5.1-0-dev
             - name: Create directory
               run: sudo mkdir -p /home/container
             - name: Build
