@@ -37,14 +37,14 @@ jobs:
 
             - name: Create tag
               run: |
-                  git tag v1.0.0
+                  git tag v1.0.1
             - name: Create Release
               id: create_release
               uses: actions/create-release@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  tag_name: v1.0.0
+                  tag_name: v1.0.1
                   release_name: Dev branch build with sqlite
                   draft: false
                   prerelease: false
