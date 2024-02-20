@@ -1,0 +1,148 @@
+name: Build for Pterodactyl with SQLite and Lua
+
+on:
+    push:
+        branches:
+            - develop
+
+jobs:
+    build:
+        runs-on: ubuntu-20.04
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev libc++-dev
+            - name: Create directory
+              run: sudo mkdir -p /home/container
+            - name: Build
+              run: |
+                  cmake -D CMAKE_INSTALL_PREFIX=/home/container .
+                  make && make install
+            - name: Archive production artifacts
+              run: |
+                  cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev.tar.gz .
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: pvpgn-server-dev
+                  path: ${{ github.workspace }}/pvpgn-server-dev.tar.gz
+
+    build_with_sqlite:
+        runs-on: ubuntu-20.04
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev libc++-dev libsqlite3-dev
+            - name: Create directory
+              run: sudo mkdir -p /home/container
+            - name: Build
+              run: |
+                  cmake -D CMAKE_INSTALL_PREFIX=/home/container -D WITH_SQLITE=true .
+                  make && make install
+            - name: Archive production artifacts
+              run: |
+                  cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev-sqlite.tar.gz .
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite
+                  path: ${{ github.workspace }}/pvpgn-server-dev-sqlite.tar.gz
+
+    build_with_sqlite_and_lua:
+        runs-on: ubuntu-20.04
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev libc++-dev libsqlite3-dev liblua5.1-0-dev
+            - name: Create directory
+              run: sudo mkdir -p /home/container
+            - name: Build
+              run: |
+                  cmake -D CMAKE_INSTALL_PREFIX=/home/container -D WITH_SQLITE=true -D WITH_LUA=true .
+                  make && make install
+            - name: Archive production artifacts
+              run: |
+                  cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev-sqlite-lua.tar.gz .
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite-lua
+                  path: ${{ github.workspace }}/pvpgn-server-dev-sqlite-lua.tar.gz
+
+    release:
+        needs: [build, build_with_sqlite, build_with_sqlite_and_lua]
+        runs-on: ubuntu-20.04
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: pvpgn-server-dev
+                  path: .
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite
+                  path: .
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: pvpgn-server-dev-sqlite-lua
+                  path: .
+            - name: Create tag
+              id: create_tag
+              run: |
+                  TIMESTAMP=$(date -u +%Y%m%d%H%M%S)
+                  TAG_NAME="v$TIMESTAMP"
+                  git tag $TAG_NAME
+                  echo "::set-output name=tag_name::$TAG_NAME"
+            - name: Create Release
+              id: create_release
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ steps.create_tag.outputs.tag_name }}
+                  release_name: Dev branch build
+                  draft: false
+                  prerelease: false
+            - name: Upload Release Asset
+              id: upload-release-asset1
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./pvpgn-server-dev.tar.gz
+                  asset_name: pvpgn-server-dev.tar.gz
+                  asset_content_type: application/gzip
+            - name: Upload Release Asset
+              id: upload-release-asset2
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./pvpgn-server-dev-sqlite.tar.gz
+                  asset_name: pvpgn-server-dev-sqlite.tar.gz
+                  asset_content_type: application/gzip
+            - name: Upload Release Asset
+              id: upload-release-asset3
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./pvpgn-server-dev-sqlite-lua.tar.gz
+                  asset_name: pvpgn-server-dev-sqlite-lua.tar.gz
+                  asset_content_type: application/gzip
