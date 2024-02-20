@@ -1,0 +1,61 @@
+name: Build for Pterodactyl
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake make build-essential zlib1g-dev liblua5.1-0-dev sqlite3 libsqlite3-dev
+
+    - name: Create directory
+      run: sudo mkdir -p /home/container
+
+    - name: Build
+      run: |
+        cmake -D CMAKE_INSTALL_PREFIX=/home/container -D WITH_SQLITE=true -D WITH_LUA=true .
+        make && make install
+
+    - name: Cleanup
+      run: |
+        cd ../
+        rm -rf build
+
+    - name: Archive production artifacts
+      run: |
+        cd /home/container && tar -zcvf ${{ github.workspace }}/pvpgn-server-dev-sqlite-lua.tar.gz .
+
+    - name: Create tag
+      run: |
+        git tag v1.0.0
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0
+        release_name: Dev branch build with sqlite and lua
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./pvpgn-server-dev-sqlite-lua.tar.gz
+        asset_name: pvpgn-server-dev-sqlite-lua.tar.gz
+        asset_content_type: application/gzip
