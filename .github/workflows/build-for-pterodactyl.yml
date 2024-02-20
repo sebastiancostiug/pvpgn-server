@@ -16,7 +16,7 @@ jobs:
             - name: Install dependencies
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y cmake make build-essential zlib1g-dev
+                  sudo apt-get install -y curl libcurl4-openssl-dev cmake make build-essential zlib1g-dev
 
             - name: Create directory
               run: sudo mkdir -p /home/container
